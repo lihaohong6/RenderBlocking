@@ -1,0 +1,30 @@
+{
+	"name": "RenderBlocking",
+	"version": "0.1.0",
+	"author": "lihaohong6",
+	"url": "",
+	"descriptionmsg": "renderblocking-desc",
+	"license-name": "GPL-2.0-or-later",
+	"requires": {
+		"MediaWiki": ">= 1.43.0"
+	},
+	"AutoloadNamespaces": {
+		"MediaWiki\\Extension\\RenderBlocking\\": "includes/"
+	},
+	"Hooks": {
+		"BeforePageDisplay": "MediaWiki\\Extension\\RenderBlocking\\RenderBlockingHooks::onBeforePageDisplay"
+	},
+	"config": {
+		"RenderBlockingInlineAssets": {
+			"value": true,
+			"description": "Whether css/js assets should be inlined in the page's head. Setting this to false will create a link to the resource in the head instead."
+		}
+	},
+	"ConfigRegistry": {
+		"renderblocking": "MediaWiki\\Config\\GlobalVarConfig::newInstance"
+	},
+	"MessagesDirs": {
+		"RenderBlocking": "i18n"
+	},
+	"manifest_version": 2
+}
