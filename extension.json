@@ -12,9 +12,15 @@
 		"MediaWiki\\Extension\\RenderBlocking\\": "includes/"
 	},
 	"Hooks": {
-		"BeforePageDisplay": "MediaWiki\\Extension\\RenderBlocking\\RenderBlockingHooks::onBeforePageDisplay",
-		"ResourceLoaderRegisterModules": "MediaWiki\\Extension\\RenderBlocking\\RenderBlockingHooks::onResourceLoaderRegisterModules"
+		"BeforePageDisplay": "MediaWiki\\Extension\\RenderBlocking\\RenderBlockingHooks::onBeforePageDisplay"
 	},
+	"RestRoutes": [
+		{
+			"path": "/renderblocking/v0/assets/{asset_type}/{skin}",
+			"method": "GET",
+			"class": "MediaWiki\\Extension\\RenderBlocking\\RestApiRenderBlockingAssets"
+		}
+	],
 	"config": {
 		"RenderBlockingInlineAssets": {
 			"value": true,

@@ -6,46 +6,13 @@ use MediaWiki\Config\Config;
 use MediaWiki\Html\Html;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Output\OutputPage;
-use MediaWiki\ResourceLoader\ResourceLoader;
 use MediaWiki\Skin\Skin;
-use Wikimedia\Minify\CSSMin;
-use Wikimedia\Minify\JavaScriptMinifier;
+use MediaWiki\Utils\UrlUtils;
 
 class RenderBlockingHooks {
 
 
 	private static ?Config $config = null;
-	private static string $MODULE_NAME = 'ext.renderBlockingAssets';
-
-	public static function onResourceLoaderRegisterModules( ResourceLoader $resourceLoader ) {
-		$skinFactory = MediaWikiServices::getInstance()->getSkinFactory();
-		$availableSkins = $skinFactory->getInstalledSkins();
-		foreach ( $availableSkins as $skinName ) {
-			$assets = RenderBlockingAssets::getAssets( $skinName, '.js' );
-			$assets = JavaScriptMinifier::minify( implode( "\n", $assets ) );
-			$resourceLoader->register( self::$MODULE_NAME . ".$skinName.js", [
-				'scripts' => [
-					[
-						'name' => $skinName,
-						'content' => $assets,
-					]
-				],
-			] );
-
-			$assets = RenderBlockingAssets::getAssets( $skinName, '.css' );
-			$assets = CSSMIN::minify( implode( "\n", $assets ) );
-			$resourceLoader->register( self::$MODULE_NAME . ".$skinName.css", [
-				'styles' => [
-					[
-						'name' => $skinName,
-						'content' => $assets,
-					]
-				],
-			] );
-		}
-
-		return true;
-	}
 
 	public static function onBeforePageDisplay( OutputPage $out, Skin $skin ) {
 
@@ -59,15 +26,20 @@ class RenderBlockingHooks {
 
 		$skinName = $skin->getSkinName();
 
-		$stylesheets = RenderBlockingAssets::getAssets( $skinName, ".css" );
-		$scripts = RenderBlockingAssets::getAssets( $skinName, ".js" );
+		$stylesheets = RenderBlockingAssets::getAssets( $skinName, AssetType::CSS );
+		$scripts = RenderBlockingAssets::getAssets( $skinName, AssetType::JS );
 
 		$inlineAssets = self::$config->get( 'RenderBlockingInlineAssets' );
 
 		if ( $inlineAssets ) {
 			self::addInlineAssets( $out, $stylesheets, $scripts );
 		} else {
-			self::addAssetLinks( $out, $skinName, sizeof( $stylesheets ) > 0, sizeof( $scripts ) > 0 );
+			self::addAssetLinks(
+				$out,
+				$skinName,
+				!empty( $stylesheets ),
+				!empty( $scripts )
+			);
 		}
 
 		return true;
@@ -96,21 +68,21 @@ class RenderBlockingHooks {
 	}
 
 	private static function addInlineAssets( OutputPage $out, array $stylesheets, array $scripts ) {
-		$css = CSSMin::minify( implode( "\n", $stylesheets ) );
+		$css = RenderBlockingAssets::minimizeAssets( $stylesheets, AssetType::CSS );
 		if ( $css ) {
 			$out->addHeadItem( 'renderblocking-css', Html::rawElement( 'style', [], $css ) );
 		}
 
-		$js = JavaScriptMinifier::minify( implode( "\n", $scripts ) );
+		$js = RenderBlockingAssets::minimizeAssets( $scripts, AssetType::JS );
 		if ( $js ) {
 			$out->addHeadItem( 'renderblocking-js', Html::rawElement( 'script', [], $js ) );
 		}
 	}
 
-	private static function getModuleUrl( $moduleName ) {
-		return wfAppendQuery( wfScript( 'load' ), [
-			'modules' => $moduleName,
-		] );
+	private static function getRestUrl( AssetType $type, string $skin ): string {
+		$url = wfScript( 'rest' ) . "/renderblocking/v0/assets/$type->value/$skin";
+
+		return MediaWikiServices::getInstance()->getUrlUtils()->expand( $url, PROTO_CANONICAL );
 	}
 
 	private static function addAssetLinks(
@@ -120,7 +92,7 @@ class RenderBlockingHooks {
 		bool $linkScripts
 	) {
 		if ( $linkStylesheets ) {
-			$cssUrl = self::getModuleUrl( self::$MODULE_NAME . ".$skinName.css" );
+			$cssUrl = self::getRestUrl( AssetType::CSS, $skinName );
 			$elem = Html::rawElement(
 				'link',
 				[
@@ -131,7 +103,7 @@ class RenderBlockingHooks {
 			$out->addHeadItem( 'renderblocking-css', $elem );
 		}
 		if ( $linkScripts ) {
-			$jsUrl = self::getModuleUrl( self::$MODULE_NAME . ".$skinName.js" );
+			$jsUrl = self::getRestUrl( AssetType::JS, $skinName );
 			$elem = Html::rawElement( 'script', [ 'src' => $jsUrl ] );
 			$out->addHeadItem( 'renderblocking-js', $elem );
 		}

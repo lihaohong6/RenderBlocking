@@ -6,32 +6,27 @@ use MediaWiki\Context\RequestContext;
 use MediaWiki\Page\Article;
 use MediaWiki\Revision\RevisionRecord;
 use MediaWiki\Title\Title;
+use Wikimedia\Minify\CSSMin;
+use Wikimedia\Minify\JavaScriptMinifier;
 
 class RenderBlockingAssets {
 
 	private const PAGE_PREFIX = 'MediaWiki:Renderblocking';
 
-	static function getAssetPage( ?string $skinName, string $suffix ): string {
-		if ( $skinName ) {
-			return self::PAGE_PREFIX . '-' . $skinName . $suffix;
-		}
-		return self::PAGE_PREFIX . $suffix;
-	}
-
-	static function getAssetPageTitles( ?string $skinName, string $suffix ): array {
+	static function getAssetPageTitles( ?string $skinName, AssetType $assetType ): array {
 		$result = [
-			self::getAssetPage( null, $suffix ),
+			self::PAGE_PREFIX . ".$assetType->value",
 		];
 		if ( $skinName ) {
-			$result[] = self::getAssetPage( $skinName, $suffix );
+			$result[] = self::PAGE_PREFIX . "-$skinName.$assetType->value";
 		}
 
 		return $result;
 	}
 
-	static function getAssets( ?string $skinName, string $suffix ): array {
+	static function getAssets( ?string $skinName, AssetType $assetType ): array {
 		$result = [];
-		foreach ( self::getAssetPageTitles( $skinName, $suffix ) as $pageTitle ) {
+		foreach ( self::getAssetPageTitles( $skinName, $assetType ) as $pageTitle ) {
 			$content = self::getPageContent( $pageTitle );
 			if ( $content ) {
 				$result[$pageTitle] = $content;
@@ -39,6 +34,21 @@ class RenderBlockingAssets {
 		}
 
 		return $result;
+	}
+
+	static function minimizeAssets( array $assets, AssetType $assetType ): string {
+		if ( empty( $assets ) ) {
+			return "";
+		}
+		$combined = implode( "\n", $assets );
+		if ( $assetType == AssetType::CSS ) {
+			return CSSMin::minify( $combined );
+		}
+		if ( $assetType == AssetType::JS ) {
+			return JavaScriptMinifier::minify( $combined );
+		}
+
+		return "";
 	}
 
 	static function getPageContent( string $pageName ): ?string {
