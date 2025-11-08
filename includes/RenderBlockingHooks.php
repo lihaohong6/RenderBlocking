@@ -6,6 +6,7 @@ use MediaWiki\Config\Config;
 use MediaWiki\Html\Html;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Output\OutputPage;
+use MediaWiki\ResourceLoader\ResourceLoader;
 use MediaWiki\Skin\Skin;
 use Wikimedia\Minify\CSSMin;
 use Wikimedia\Minify\JavaScriptMinifier;
@@ -14,6 +15,37 @@ class RenderBlockingHooks {
 
 
 	private static ?Config $config = null;
+	private static string $MODULE_NAME = 'ext.renderBlockingAssets';
+
+	public static function onResourceLoaderRegisterModules( ResourceLoader $resourceLoader ) {
+		$skinFactory = MediaWikiServices::getInstance()->getSkinFactory();
+		$availableSkins = $skinFactory->getInstalledSkins();
+		foreach ( $availableSkins as $skinName ) {
+			$assets = RenderBlockingAssets::getAssets( $skinName, '.js' );
+			$assets = JavaScriptMinifier::minify( implode( "\n", $assets ) );
+			$resourceLoader->register( self::$MODULE_NAME . ".$skinName.js", [
+				'scripts' => [
+					[
+						'name' => $skinName,
+						'content' => $assets,
+					]
+				],
+			] );
+
+			$assets = RenderBlockingAssets::getAssets( $skinName, '.css' );
+			$assets = CSSMIN::minify( implode( "\n", $assets ) );
+			$resourceLoader->register( self::$MODULE_NAME . ".$skinName.css", [
+				'styles' => [
+					[
+						'name' => $skinName,
+						'content' => $assets,
+					]
+				],
+			] );
+		}
+
+		return true;
+	}
 
 	public static function onBeforePageDisplay( OutputPage $out, Skin $skin ) {
 
@@ -75,6 +107,12 @@ class RenderBlockingHooks {
 		}
 	}
 
+	private static function getModuleUrl( $moduleName ) {
+		return wfAppendQuery( wfScript( 'load' ), [
+			'modules' => $moduleName,
+		] );
+	}
+
 	private static function addAssetLinks(
 		OutputPage $out,
 		string $skinName,
@@ -82,12 +120,7 @@ class RenderBlockingHooks {
 		bool $linkScripts
 	) {
 		if ( $linkStylesheets ) {
-			$cssUrl = wfAppendQuery( wfScript( 'api' ), [
-				'action' => 'renderblockingassets',
-				'type' => 'css',
-				'skin' => $skinName,
-				'format' => 'raw'
-			] );
+			$cssUrl = self::getModuleUrl( self::$MODULE_NAME . ".$skinName.css" );
 			$elem = Html::rawElement(
 				'link',
 				[
@@ -98,12 +131,7 @@ class RenderBlockingHooks {
 			$out->addHeadItem( 'renderblocking-css', $elem );
 		}
 		if ( $linkScripts ) {
-			$jsUrl = wfAppendQuery( wfScript( 'api' ), [
-				'action' => 'renderblockingassets',
-				'type' => 'js',
-				'skin' => $skinName,
-				'format' => 'raw'
-			] );
+			$jsUrl = self::getModuleUrl( self::$MODULE_NAME . ".$skinName.js" );
 			$elem = Html::rawElement( 'script', [ 'src' => $jsUrl ] );
 			$out->addHeadItem( 'renderblocking-js', $elem );
 		}
