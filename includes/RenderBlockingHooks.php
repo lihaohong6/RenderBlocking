@@ -67,12 +67,12 @@ class RenderBlockingHooks {
 	}
 
 	private static function addInlineAssets( OutputPage $out, array $stylesheets, array $scripts ) {
-		$css = RenderBlockingAssets::minimizeAssets( $stylesheets, AssetType::CSS );
+		$css = RenderBlockingAssets::minifyAssets( $stylesheets, AssetType::CSS );
 		if ( $css ) {
 			$out->addHeadItem( 'renderblocking-css', Html::rawElement( 'style', [], $css ) );
 		}
 
-		$js = RenderBlockingAssets::minimizeAssets( $scripts, AssetType::JS );
+		$js = RenderBlockingAssets::minifyAssets( $scripts, AssetType::JS );
 		if ( $js ) {
 			$out->addHeadItem( 'renderblocking-js', Html::rawElement( 'script', [], $js ) );
 		}

@@ -36,7 +36,7 @@ class RenderBlockingAssets {
 		return $result;
 	}
 
-	static function minimizeAssets( array $assets, AssetType $assetType ): string {
+	static function minifyAssets( array $assets, AssetType $assetType ): string {
 		if ( empty( $assets ) ) {
 			return "";
 		}
@@ -59,6 +59,10 @@ class RenderBlockingAssets {
 
 		$article = Article::newFromTitle( $title, RequestContext::getMain() );
 		$content = $article->getPage()->getContent( RevisionRecord::RAW );
+		if ( !$content ) {
+			return null;
+		}
+
 		$text = $content->getText();
 		if ( !$text || empty( trim( $text ) ) ) {
 			return null;

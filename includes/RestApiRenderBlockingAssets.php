@@ -11,13 +11,14 @@ class RestApiRenderBlockingAssets extends SimpleHandler {
 	public function run( string $assetType, string $skin ): Response {
 		$type = AssetType::from( $assetType );
 		$assets = RenderBlockingAssets::getAssets( $skin, $type );
-		$minimized = RenderBlockingAssets::minimizeAssets( $assets, $type );
+		$minified = RenderBlockingAssets::minifyAssets( $assets, $type );
+
+		$res = new Response( $minified );
+		# TODO: does this caching setting interfere with private wikis?
+		#  How about cache invalidation?
+		$res->setHeader( 'Cache-Control', 'public,max-age=3600' );
 
 		$contentType = $type == AssetType::CSS ? "text/css" : "text/javascript";
-
-		$res = new Response( $minimized );
-		# TODO: does this caching setting interfere with private wikis?
-		$res->setHeader( 'Cache-Control', 'public,max-age=3600' );
 		$res->setHeader( 'Content-Type', "$contentType; charset=utf-8" );
 
 		return $res;
