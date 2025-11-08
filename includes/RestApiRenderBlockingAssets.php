@@ -8,7 +8,7 @@ use Wikimedia\ParamValidator\ParamValidator;
 
 class RestApiRenderBlockingAssets extends SimpleHandler {
 
-	public function run( string $assetType, string $skin ) {
+	public function run( string $assetType, string $skin ): Response {
 		$type = AssetType::from( $assetType );
 		$assets = RenderBlockingAssets::getAssets( $skin, $type );
 		$minimized = RenderBlockingAssets::minimizeAssets( $assets, $type );
@@ -16,6 +16,7 @@ class RestApiRenderBlockingAssets extends SimpleHandler {
 		$contentType = $type == AssetType::CSS ? "text/css" : "text/javascript";
 
 		$res = new Response( $minimized );
+		# TODO: does this caching setting interfere with private wikis?
 		$res->setHeader( 'Cache-Control', 'public,max-age=3600' );
 		$res->setHeader( 'Content-Type', "$contentType; charset=utf-8" );
 

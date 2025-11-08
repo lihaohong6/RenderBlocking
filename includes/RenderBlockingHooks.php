@@ -7,7 +7,6 @@ use MediaWiki\Html\Html;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Output\OutputPage;
 use MediaWiki\Skin\Skin;
-use MediaWiki\Utils\UrlUtils;
 
 class RenderBlockingHooks {
 
@@ -90,7 +89,7 @@ class RenderBlockingHooks {
 		string $skinName,
 		bool $linkStylesheets,
 		bool $linkScripts
-	) {
+	): void {
 		if ( $linkStylesheets ) {
 			$cssUrl = self::getRestUrl( AssetType::CSS, $skinName );
 			$elem = Html::rawElement(
