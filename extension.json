@@ -23,7 +23,7 @@
 	],
 	"config": {
 		"RenderBlockingInlineAssets": {
-			"value": true,
+			"value": false,
 			"description": "Whether css/js assets should be inlined in the page's head. Setting this to false will create a link to the resource in the head instead."
 		}
 	},
