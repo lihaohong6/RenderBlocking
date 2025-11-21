@@ -13,7 +13,12 @@ class RenderBlockingHooks {
 
 	private static ?Config $config = null;
 
-	public static function setPagesAsProtected() {
+	/**
+	 * Since MediaWiki:renderblocking-pages controls which scripts get loaded just like
+	 * MediaWiki:Gadgets-definition, it should be added to $wgRawHtmlMessages. Same
+	 * goes for skin-specific pages.
+	 */
+	public static function setPagesAsProtected(): void {
 		global $wgRawHtmlMessages;
 
 		$wgRawHtmlMessages[] = 'renderblocking-pages';
@@ -24,7 +29,7 @@ class RenderBlockingHooks {
 		}
 	}
 
-	public static function onBeforePageDisplay( OutputPage $out, Skin $skin ) {
+	public static function onBeforePageDisplay( OutputPage $out, Skin $skin ): bool {
 
 		if ( self::$config === null ) {
 			self::$config = MediaWikiServices::getInstance()->getMainConfig();
@@ -89,12 +94,28 @@ class RenderBlockingHooks {
 		}
 	}
 
+	/**
+	 * @param AssetType $type
+	 * @param string $skin
+	 *
+	 * @return string URL to rest endpoint for assets. See RestApiRenderBlockingAssets.php
+	 */
 	private static function getRestUrl( AssetType $type, string $skin ): string {
 		$url = wfScript( 'rest' ) . "/renderblocking/v0/assets/$type->value/$skin";
 
 		return MediaWikiServices::getInstance()->getUrlUtils()->expand( $url, PROTO_CANONICAL );
 	}
 
+	/**
+	 * @param OutputPage $out
+	 * @param string $skinName
+	 * @param bool $linkStylesheets Whether the stylesheet should be linked
+	 * @param bool $linkScripts Whether JavaScript should be linked
+	 *
+	 * Add links to a stylesheet/script on a page's output
+	 *
+	 * @return void
+	 */
 	private static function addAssetLinks(
 		OutputPage $out,
 		string $skinName,
