@@ -13,6 +13,17 @@ class RenderBlockingHooks {
 
 	private static ?Config $config = null;
 
+	public static function setPagesAsProtected() {
+		global $wgRawHtmlMessages;
+
+		$wgRawHtmlMessages[] = 'renderblocking-pages';
+
+		$skinFactory = MediaWikiServices::getInstance()->getSkinFactory();
+		foreach ( $skinFactory->getInstalledSkins() as $skinName => $skinDisplayName ) {
+			$wgRawHtmlMessages[] = "renderblocking-$skinName-pages";
+		}
+	}
+
 	public static function onBeforePageDisplay( OutputPage $out, Skin $skin ) {
 
 		if ( self::$config === null ) {
