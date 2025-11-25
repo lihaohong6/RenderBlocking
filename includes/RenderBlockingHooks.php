@@ -68,6 +68,7 @@ class RenderBlockingHooks {
 			return true;
 		}
 
+		// Note that this is a setting in MediaWiki core and not an extension setting.
 		if ( !self::$config->get( "AllowSiteCSSOnRestrictedPages" ) ) {
 			$title = $out->getTitle();
 			$skippedSpecialPages = [

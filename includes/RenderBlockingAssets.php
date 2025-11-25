@@ -50,8 +50,7 @@ class RenderBlockingAssets {
 	static function filterPageList( array $pageList, AssetType $assetType ): array {
 		$result = [];
 		foreach ( $pageList as $pageTitle ) {
-			$extensionIndex = strlen( $pageTitle ) - strlen( $assetType->value );
-			if ( stripos( $pageTitle, $assetType->value ) === $extensionIndex ) {
+			if ( str_ends_with( $pageTitle, '.' . $assetType->value ) ) {
 				$result[] = $pageTitle;
 			}
 		}
@@ -84,7 +83,7 @@ class RenderBlockingAssets {
 		if ( self::$cache === null ) {
 			self::$cache = MediaWikiServices::getInstance()->getMainWANObjectCache();
 		}
-		$cacheKey = "ext-renderblocking-$skinName-$assetType->value";
+		$cacheKey = self::$cache->makeKey('renderblocking', $skinName ?? "", $assetType->value );
 
 		return self::$cache->getWithSetCallback( $cacheKey, 600, function () use ( $skinName, $assetType ) {
 			$result = [];
