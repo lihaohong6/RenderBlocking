@@ -7,11 +7,20 @@ use MediaWiki\Html\Html;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Output\OutputPage;
 use MediaWiki\Skin\Skin;
+use MediaWiki\Utils\UrlUtils;
 
 class RenderBlockingHooks {
 
 
-	private static ?Config $config = null;
+	private Config $config;
+	private RenderBlockingAssetService $assetService;
+	private UrlUtils $urlUtils;
+
+	public function __construct( RenderBlockingAssetService $assetService, Config $config, UrlUtils $urlUtils ) {
+		$this->assetService = $assetService;
+		$this->config = $config;
+		$this->urlUtils = $urlUtils;
+	}
 
 	/**
 	 * Since MediaWiki:renderblocking-pages controls which scripts get loaded just like
@@ -29,11 +38,7 @@ class RenderBlockingHooks {
 		}
 	}
 
-	public static function onBeforePageDisplay( OutputPage $out, Skin $skin ): bool {
-
-		if ( self::$config === null ) {
-			self::$config = MediaWikiServices::getInstance()->getMainConfig();
-		}
+	public function onBeforePageDisplay( OutputPage $out, Skin $skin ): bool {
 
 		if ( self::shouldSkipAssets( $out ) ) {
 			return true;
@@ -41,10 +46,10 @@ class RenderBlockingHooks {
 
 		$skinName = $skin->getSkinName();
 
-		$stylesheets = RenderBlockingAssets::getAssets( $skinName, AssetType::CSS );
-		$scripts = RenderBlockingAssets::getAssets( $skinName, AssetType::JS );
+		$stylesheets = $this->assetService->getAssets( $skinName, AssetType::CSS );
+		$scripts = $this->assetService->getAssets( $skinName, AssetType::JS );
 
-		$inlineAssets = self::$config->get( 'RenderBlockingInlineAssets' );
+		$inlineAssets = $this->config->get( 'RenderBlockingInlineAssets' );
 
 		if ( $inlineAssets ) {
 			self::addInlineAssets( $out, $stylesheets, $scripts );
@@ -60,7 +65,7 @@ class RenderBlockingHooks {
 		return true;
 	}
 
-	private static function shouldSkipAssets( $out ): bool {
+	private function shouldSkipAssets( OutputPage $out ): bool {
 		$request = $out->getRequest();
 
 		$safemode = $request->getVal( 'safemode' );
@@ -69,7 +74,7 @@ class RenderBlockingHooks {
 		}
 
 		// Note that this is a setting in MediaWiki core and not an extension setting.
-		if ( !self::$config->get( "AllowSiteCSSOnRestrictedPages" ) ) {
+		if ( !$this->config->get( "AllowSiteCSSOnRestrictedPages" ) ) {
 			$title = $out->getTitle();
 			$skippedSpecialPages = [
 				"Preferences" => true,
@@ -83,13 +88,13 @@ class RenderBlockingHooks {
 		return false;
 	}
 
-	private static function addInlineAssets( OutputPage $out, array $stylesheets, array $scripts ) {
-		$css = RenderBlockingAssets::minifyAssets( $stylesheets, AssetType::CSS );
+	private function addInlineAssets( OutputPage $out, array $stylesheets, array $scripts ) {
+		$css = $this->assetService->minifyAssets( $stylesheets, AssetType::CSS );
 		if ( $css ) {
 			$out->addHeadItem( 'renderblocking-css', Html::rawElement( 'style', [], $css ) );
 		}
 
-		$js = RenderBlockingAssets::minifyAssets( $scripts, AssetType::JS );
+		$js = $this->assetService->minifyAssets( $scripts, AssetType::JS );
 		if ( $js ) {
 			$out->addHeadItem( 'renderblocking-js', Html::rawElement( 'script', [], $js ) );
 		}
@@ -101,10 +106,10 @@ class RenderBlockingHooks {
 	 *
 	 * @return string URL to rest endpoint for assets. See RestApiRenderBlockingAssets.php
 	 */
-	private static function getRestUrl( AssetType $type, string $skin ): string {
+	private function getRestUrl( AssetType $type, string $skin ): string {
 		$url = wfScript( 'rest' ) . "/renderblocking/v0/assets/$type->value/$skin";
 
-		return MediaWikiServices::getInstance()->getUrlUtils()->expand( $url, PROTO_CANONICAL );
+		return $this->urlUtils->expand( $url, PROTO_CANONICAL );
 	}
 
 	/**
@@ -117,14 +122,14 @@ class RenderBlockingHooks {
 	 *
 	 * @return void
 	 */
-	private static function addAssetLinks(
+	private function addAssetLinks(
 		OutputPage $out,
 		string $skinName,
 		bool $linkStylesheets,
 		bool $linkScripts
 	): void {
 		if ( $linkStylesheets ) {
-			$cssUrl = self::getRestUrl( AssetType::CSS, $skinName );
+			$cssUrl = $this->getRestUrl( AssetType::CSS, $skinName );
 			$elem = Html::rawElement(
 				'link',
 				[
@@ -135,7 +140,7 @@ class RenderBlockingHooks {
 			$out->addHeadItem( 'renderblocking-css', $elem );
 		}
 		if ( $linkScripts ) {
-			$jsUrl = self::getRestUrl( AssetType::JS, $skinName );
+			$jsUrl = $this->getRestUrl( AssetType::JS, $skinName );
 			$elem = Html::rawElement( 'script', [ 'src' => $jsUrl ] );
 			$out->addHeadItem( 'renderblocking-js', $elem );
 		}

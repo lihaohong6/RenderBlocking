@@ -8,10 +8,16 @@ use Wikimedia\ParamValidator\ParamValidator;
 
 class RestApiRenderBlockingAssets extends SimpleHandler {
 
+	private RenderBlockingAssetService $assetService;
+
+	public function __construct( RenderBlockingAssetService $assetService ) {
+		$this->assetService = $assetService;
+	}
+
 	public function run( string $assetType, string $skin ): Response {
 		$type = AssetType::from( $assetType );
-		$assets = RenderBlockingAssets::getAssets( $skin, $type );
-		$minified = RenderBlockingAssets::minifyAssets( $assets, $type );
+		$assets = $this->assetService->getAssets( $skin, $type );
+		$minified = $this->assetService->minifyAssets( $assets, $type );
 
 		$res = new Response( $minified );
 		# TODO: does this caching setting interfere with private wikis?

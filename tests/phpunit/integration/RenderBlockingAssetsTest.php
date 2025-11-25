@@ -3,19 +3,27 @@
 namespace MediaWiki\Extension\RenderBlocking\Tests;
 
 use MediaWiki\Extension\RenderBlocking\AssetType;
-use MediaWiki\Extension\RenderBlocking\RenderBlockingAssets;
+use MediaWiki\Extension\RenderBlocking\RenderBlockingAssetService;
 use MediaWikiIntegrationTestCase;
 
 /**
  * @group RenderBlocking
  * @group Database
- * @covers \MediaWiki\Extension\RenderBlocking\RenderBlockingAssets
+ * @covers \MediaWiki\Extension\RenderBlocking\RenderBlockingAssetService
  */
 class RenderBlockingAssetsTest extends MediaWikiIntegrationTestCase {
+
+	private RenderBlockingAssetService $assetService;
 
 	protected function setUp(): void {
 		parent::setUp();
 		$this->resetServices();
+		$services = $this->getServiceContainer();
+		$this->assetService = new RenderBlockingAssetService(
+			$services->getMainWANObjectCache(),
+			$services->getRevisionLookup(),
+			$services->getTitleFactory()
+		);
 	}
 
 	public function testGetPageListParsesContentCorrectly() {
@@ -30,7 +38,7 @@ TEXT;
 
 		$this->editPage( $pageName, $content );
 
-		$list = RenderBlockingAssets::getPageList( $pageName );
+		$list = $this->assetService->getPageList( $pageName );
 
 		$expected = [
 			'MediaWiki:MyScript.js',
@@ -42,7 +50,7 @@ TEXT;
 	}
 
 	public function testGetPageListReturnsEmptyOnNonExistentPage() {
-		$list = RenderBlockingAssets::getPageList( 'MediaWiki:Renderblocking-nonexistent' );
+		$list = $this->assetService->getPageList( 'MediaWiki:Renderblocking-nonexistent' );
 		$this->assertEmpty( $list );
 	}
 
@@ -53,7 +61,7 @@ TEXT;
 		$listPage = "MediaWiki:Renderblocking-$skin-pages";
 		$this->editPage( $listPage, "* ExtraSkinStyle.css" );
 
-		$titles = RenderBlockingAssets::getAssetPageTitles( $skin, $type );
+		$titles = $this->assetService->getAssetPageTitles( $skin, $type );
 
 		$expected = ['MediaWiki:Renderblocking.css', "MediaWiki:Renderblocking-$skin.css", 'MediaWiki:ExtraSkinStyle.css'];
 
@@ -68,7 +76,7 @@ TEXT;
 		$jsContent = "console.log('Hello');";
 		$this->editPage( $jsPage, $jsContent );
 
-		$assets = RenderBlockingAssets::getAssets( $skin, $type );
+		$assets = $this->assetService->getAssets( $skin, $type );
 
 		$this->assertArrayHasKey( $jsPage, $assets );
 		$this->assertEquals( $jsContent, $assets[$jsPage] );

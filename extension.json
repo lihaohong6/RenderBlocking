@@ -11,9 +11,22 @@
 	"AutoloadNamespaces": {
 		"MediaWiki\\Extension\\RenderBlocking\\": "includes/"
 	},
-	"Hooks": {
-		"BeforePageDisplay": "MediaWiki\\Extension\\RenderBlocking\\RenderBlockingHooks::onBeforePageDisplay"
+	"HookHandlers": {
+		"RenderBlockingHandler": {
+			"class": "MediaWiki\\Extension\\RenderBlocking\\RenderBlockingHooks",
+			"services": [
+				"RenderBlocking.AssetService",
+				"MainConfig",
+				"UrlUtils"
+			]
+		}
 	},
+	"Hooks": {
+		"BeforePageDisplay": "RenderBlockingHandler"
+	},
+	"ServiceWiringFiles": [
+		"includes/ServiceWiring.php"
+	],
 	"ExtensionFunctions": [
 		"MediaWiki\\Extension\\RenderBlocking\\RenderBlockingHooks::setPagesAsProtected"
 	],
@@ -21,7 +34,10 @@
 		{
 			"path": "/renderblocking/v0/assets/{asset_type}/{skin}",
 			"method": "GET",
-			"class": "MediaWiki\\Extension\\RenderBlocking\\RestApiRenderBlockingAssets"
+			"class": "MediaWiki\\Extension\\RenderBlocking\\RestApiRenderBlockingAssets",
+			"services": [
+				"RenderBlocking.AssetService"
+			]
 		}
 	],
 	"config": {
