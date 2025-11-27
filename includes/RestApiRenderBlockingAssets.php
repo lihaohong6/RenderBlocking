@@ -20,8 +20,8 @@ class RestApiRenderBlockingAssets extends SimpleHandler {
 		$minified = $this->assetService->minifyAssets( $assets, $type );
 
 		$res = new Response( $minified );
-		# TODO: does this caching setting interfere with private wikis?
-		#  How about cache invalidation?
+		# Responses to logged-in users are always private, so this won't interfere with private wikis.
+		# https://www.mediawiki.org/wiki/API:Caching_data
 		$res->setHeader( 'Cache-Control', 'public,max-age=3600' );
 
 		$contentType = $type == AssetType::CSS ? "text/css" : "text/javascript";
