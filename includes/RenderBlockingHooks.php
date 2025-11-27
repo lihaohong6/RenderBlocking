@@ -4,8 +4,10 @@ namespace MediaWiki\Extension\RenderBlocking;
 
 use MediaWiki\Config\Config;
 use MediaWiki\Html\Html;
+use MediaWiki\MainConfigNames;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Output\OutputPage;
+use MediaWiki\ResourceLoader\Module;
 use MediaWiki\Skin\Skin;
 use MediaWiki\Utils\UrlUtils;
 
@@ -74,13 +76,9 @@ class RenderBlockingHooks {
 		}
 
 		// Note that this is a setting in MediaWiki core and not an extension setting.
-		if ( !$this->config->get( "AllowSiteCSSOnRestrictedPages" ) ) {
-			$title = $out->getTitle();
-			$skippedSpecialPages = [
-				"Preferences" => true,
-				"UserLogin" => true
-			];
-			if ( $title->isSpecialPage() && isset( $skippedSpecialPages[$title->getText()] ) ) {
+		if ( !$this->config->get( MainConfigNames::AllowSiteCSSOnRestrictedPages ) ) {
+			// Skip for pages such as Special:Preferences and Special:Login
+			if ( $out->getAllowedModules( Module::TYPE_COMBINED ) < Module::ORIGIN_USER_SITEWIDE ) {
 				return true;
 			}
 		}
