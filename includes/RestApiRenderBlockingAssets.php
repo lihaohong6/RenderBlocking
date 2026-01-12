@@ -20,8 +20,11 @@ class RestApiRenderBlockingAssets extends SimpleHandler {
 		$minified = $this->assetService->minifyAssets( $assets, $type );
 
 		$res = new Response( $minified );
-		# Responses to logged-in users are always private, so this won't interfere with private wikis.
+		# Responses to logged-in users always have Cache-Control marked as private,
+		# so this won't interfere with private wikis.
 		# https://www.mediawiki.org/wiki/API:Caching_data
+		# MediaWiki core serves the content of Common.js and Common.css even in the absence of read rights, so
+		# the possibility of leaking ender-blocking css/js is fine.
 		$res->setHeader( 'Cache-Control', 'public,max-age=3600' );
 
 		$contentType = $type == AssetType::CSS ? "text/css" : "text/javascript";
