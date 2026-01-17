@@ -17,9 +17,8 @@ class RestApiRenderBlockingAssets extends SimpleHandler {
 	public function run( string $assetType, string $skin ): Response {
 		$type = AssetType::from( $assetType );
 		$assets = $this->assetService->getAssets( $skin, $type );
-		$minified = $this->assetService->minifyAssets( $assets, $type );
 
-		$res = new Response( $minified );
+		$res = new Response( $assets );
 		# Responses to logged-in users always have Cache-Control marked as private,
 		# so this won't interfere with private wikis.
 		# https://www.mediawiki.org/wiki/API:Caching_data

@@ -86,13 +86,10 @@ class RenderBlockingHooks {
 		return false;
 	}
 
-	private function addInlineAssets( OutputPage $out, array $stylesheets, array $scripts ) {
-		$css = $this->assetService->minifyAssets( $stylesheets, AssetType::CSS );
+	private function addInlineAssets( OutputPage $out, string $css, string $js ): void {
 		if ( $css ) {
 			$out->addHeadItem( 'renderblocking-css', Html::rawElement( 'style', [], $css ) );
 		}
-
-		$js = $this->assetService->minifyAssets( $scripts, AssetType::JS );
 		if ( $js ) {
 			$out->addHeadItem( 'renderblocking-js', Html::rawElement( 'script', [], $js ) );
 		}

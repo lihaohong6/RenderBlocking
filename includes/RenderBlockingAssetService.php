@@ -28,7 +28,7 @@ class RenderBlockingAssetService {
 		$this->titleFactory = $titleFactory;
 	}
 
-	public function getAssets( ?string $skinName, AssetType $assetType ): array {
+	public function getAssets( ?string $skinName, AssetType $assetType ): string {
 		$key = $this->cache->makeKey( 'renderblocking', $skinName, $assetType->value );
 
 		return $this->cache->getWithSetCallback( $key, 600, function () use ( $skinName, $assetType ) {
@@ -39,7 +39,7 @@ class RenderBlockingAssetService {
 					$result[$pageTitle] = $content;
 				}
 			}
-			return $result;
+			return $this->minifyAssets( $result, $assetType );
 		}, [ "lockTSE" => 10 ] );
 	}
 

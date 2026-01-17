@@ -78,7 +78,6 @@ TEXT;
 
 		$assets = $this->assetService->getAssets( $skin, $type );
 
-		$this->assertArrayHasKey( $jsPage, $assets );
-		$this->assertEquals( $jsContent, $assets[$jsPage] );
+		$this->assertEquals( $jsContent, $assets );
 	}
 }
