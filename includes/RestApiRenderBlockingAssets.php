@@ -4,14 +4,17 @@ namespace MediaWiki\Extension\RenderBlocking;
 
 use MediaWiki\Rest\Response;
 use MediaWiki\Rest\SimpleHandler;
+use MediaWiki\Skin\SkinFactory;
 use Wikimedia\ParamValidator\ParamValidator;
 
 class RestApiRenderBlockingAssets extends SimpleHandler {
 
 	private RenderBlockingAssetService $assetService;
+	private SkinFactory $skinFactory;
 
-	public function __construct( RenderBlockingAssetService $assetService ) {
+	public function __construct( RenderBlockingAssetService $assetService, SkinFactory $skinFactory ) {
 		$this->assetService = $assetService;
+		$this->skinFactory = $skinFactory;
 	}
 
 	public function run( string $assetType, string $skin ): Response {
@@ -52,7 +55,7 @@ class RestApiRenderBlockingAssets extends SimpleHandler {
 			],
 			'skin' => [
 				self::PARAM_SOURCE => 'path',
-				ParamValidator::PARAM_TYPE => 'string',
+				ParamValidator::PARAM_TYPE => $this->skinFactory->getInstalledSkins(),
 				ParamValidator::PARAM_REQUIRED => true,
 			],
 		];
