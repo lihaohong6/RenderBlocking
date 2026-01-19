@@ -61,7 +61,7 @@ class RestApiRenderBlockingAssets extends SimpleHandler {
 			],
 			'skin' => [
 				self::PARAM_SOURCE => 'path',
-				ParamValidator::PARAM_TYPE => $this->skinFactory->getInstalledSkins(),
+				ParamValidator::PARAM_TYPE => array_keys( $this->skinFactory->getInstalledSkins() ),
 				ParamValidator::PARAM_REQUIRED => true,
 			],
 			'debug' => [
