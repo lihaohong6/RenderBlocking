@@ -56,11 +56,13 @@ class RenderBlockingHooks {
 		if ( $inlineAssets ) {
 			self::addInlineAssets( $out, $stylesheets, $scripts );
 		} else {
+			$debug = $out->getRequest()->getVal( 'debug' );
 			self::addAssetLinks(
 				$out,
 				$skinName,
 				!empty( $stylesheets ),
-				!empty( $scripts )
+				!empty( $scripts ),
+				$debug
 			);
 		}
 
@@ -98,11 +100,17 @@ class RenderBlockingHooks {
 	/**
 	 * @param AssetType $type
 	 * @param string $skin
+	 * @param string|null $debug Debug mode value
 	 *
 	 * @return string URL to rest endpoint for assets. See RestApiRenderBlockingAssets.php
 	 */
-	private function getRestUrl( AssetType $type, string $skin ): string {
+	private function getRestUrl( AssetType $type, string $skin, ?string $debug = null ): string {
 		$url = wfScript( 'rest' ) . "/renderblocking/v0/assets/$type->value/$skin";
+
+		if ( $debug === 'true' || $debug === '2' ) {
+			$queryParams = [ "debug" => '2' ];
+			$url .= '?' . http_build_query( $queryParams );
+		}
 
 		return $this->urlUtils->expand( $url, PROTO_CANONICAL );
 	}
@@ -112,6 +120,7 @@ class RenderBlockingHooks {
 	 * @param string $skinName
 	 * @param bool $linkStylesheets Whether the stylesheet should be linked
 	 * @param bool $linkScripts Whether JavaScript should be linked
+	 * @param string|null $debug Debug mode value
 	 *
 	 * Add links to a stylesheet/script on a page's output
 	 *
@@ -121,10 +130,11 @@ class RenderBlockingHooks {
 		OutputPage $out,
 		string $skinName,
 		bool $linkStylesheets,
-		bool $linkScripts
+		bool $linkScripts,
+		?string $debug = null
 	): void {
 		if ( $linkStylesheets ) {
-			$cssUrl = $this->getRestUrl( AssetType::CSS, $skinName );
+			$cssUrl = $this->getRestUrl( AssetType::CSS, $skinName, $debug );
 			$elem = Html::rawElement(
 				'link',
 				[
@@ -135,7 +145,7 @@ class RenderBlockingHooks {
 			$out->addHeadItem( 'renderblocking-css', $elem );
 		}
 		if ( $linkScripts ) {
-			$jsUrl = $this->getRestUrl( AssetType::JS, $skinName );
+			$jsUrl = $this->getRestUrl( AssetType::JS, $skinName, $debug );
 			$elem = Html::rawElement( 'script', [ 'src' => $jsUrl ] );
 			$out->addHeadItem( 'renderblocking-js', $elem );
 		}

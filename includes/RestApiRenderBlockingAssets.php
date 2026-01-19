@@ -18,8 +18,10 @@ class RestApiRenderBlockingAssets extends SimpleHandler {
 	}
 
 	public function run( string $assetType, string $skin ): Response {
+		$params = $this->getValidatedParams();
 		$type = AssetType::from( $assetType );
-		$assets = $this->assetService->getAssets( $skin, $type );
+		$isDebugMode = $params['debug'] === 'true' || $params['debug'] === '2';
+		$assets = $this->assetService->getAssets( $skin, $type, $isDebugMode );
 
 		$res = new Response( $assets );
 		# Responses to logged-in users always have Cache-Control marked as private,
@@ -27,7 +29,11 @@ class RestApiRenderBlockingAssets extends SimpleHandler {
 		# https://www.mediawiki.org/wiki/API:Caching_data
 		# MediaWiki core serves the content of Common.js and Common.css even in the absence of read rights, so
 		# the possibility of leaking ender-blocking css/js is fine.
-		$res->setHeader( 'Cache-Control', 'public,max-age=3600' );
+		if ( $isDebugMode ) {
+			$res->setHeader( 'Cache-Control', 'private,no-cache,no-store' );
+		} else {
+			$res->setHeader( 'Cache-Control', 'public,max-age=3600' );
+		}
 
 		$contentType = $type == AssetType::CSS ? "text/css" : "text/javascript";
 		$res->setHeader( 'Content-Type', "$contentType; charset=utf-8" );
@@ -57,6 +63,11 @@ class RestApiRenderBlockingAssets extends SimpleHandler {
 				self::PARAM_SOURCE => 'path',
 				ParamValidator::PARAM_TYPE => $this->skinFactory->getInstalledSkins(),
 				ParamValidator::PARAM_REQUIRED => true,
+			],
+			'debug' => [
+				self::PARAM_SOURCE => 'query',
+				ParamValidator::PARAM_TYPE => 'string',
+				ParamValidator::PARAM_REQUIRED => false,
 			],
 		];
 	}

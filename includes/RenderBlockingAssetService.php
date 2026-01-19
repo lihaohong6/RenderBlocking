@@ -28,10 +28,8 @@ class RenderBlockingAssetService {
 		$this->titleFactory = $titleFactory;
 	}
 
-	public function getAssets( ?string $skinName, AssetType $assetType ): string {
-		$key = $this->cache->makeKey( 'renderblocking', $skinName, $assetType->value );
-
-		return $this->cache->getWithSetCallback( $key, 600, function () use ( $skinName, $assetType ) {
+	public function getAssets( ?string $skinName, AssetType $assetType, bool $debug = false ): string {
+		$fetchAssets = function () use ( $skinName, $assetType ) {
 			$result = [];
 			foreach ( $this->getAssetPageTitles( $skinName, $assetType ) as $pageTitle ) {
 				$content = $this->getPageContent( $pageTitle );
@@ -40,7 +38,15 @@ class RenderBlockingAssetService {
 				}
 			}
 			return $this->minifyAssets( $result, $assetType );
-		}, [ "lockTSE" => 10 ] );
+		};
+
+		if ( $debug ) {
+			return $fetchAssets();
+		}
+
+		$key = $this->cache->makeKey( 'renderblocking', $skinName, $assetType->value );
+
+		return $this->cache->getWithSetCallback( $key, 600, $fetchAssets, [ "lockTSE" => 10 ] );
 	}
 
 	private function getPageContent( string $pageName ): ?string {
