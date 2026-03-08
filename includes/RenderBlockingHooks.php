@@ -90,10 +90,10 @@ class RenderBlockingHooks {
 
 	private function addInlineAssets( OutputPage $out, string $css, string $js ): void {
 		if ( $css ) {
-			$out->addHeadItem( 'renderblocking-css', Html::rawElement( 'style', [], $css ) );
+			$out->addHeadItem( 'renderblocking-css', Html::inlineStyle( $css ) );
 		}
 		if ( $js ) {
-			$out->addHeadItem( 'renderblocking-js', Html::rawElement( 'script', [], $js ) );
+			$out->addHeadItem( 'renderblocking-js', Html::inlineScript( $js ) );
 		}
 	}
 
