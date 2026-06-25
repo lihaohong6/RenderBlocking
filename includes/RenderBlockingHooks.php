@@ -4,7 +4,6 @@ namespace MediaWiki\Extension\RenderBlocking;
 
 use MediaWiki\Config\Config;
 use MediaWiki\Html\Html;
-use MediaWiki\MainConfigNames;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Output\OutputPage;
 use MediaWiki\ResourceLoader\Module;
@@ -42,14 +41,22 @@ class RenderBlockingHooks {
 
 	public function onBeforePageDisplay( OutputPage $out, Skin $skin ): bool {
 
-		if ( self::shouldSkipAssets( $out ) ) {
+		if ( $out->getRequest()->getVal( 'safemode' ) ) {
+			return true;
+		}
+
+		// Respect $wgAllowSiteCSSOnRestrictedPages on Special pages
+		$allowCss = $out->getAllowedModules( Module::TYPE_STYLES ) >= Module::ORIGIN_USER_SITEWIDE;
+		$allowJs = $out->getAllowedModules( Module::TYPE_SCRIPTS ) >= Module::ORIGIN_USER_SITEWIDE;
+
+		if ( !$allowCss && !$allowJs ) {
 			return true;
 		}
 
 		$skinName = $skin->getSkinName();
 
-		$stylesheets = $this->assetService->getAssets( $skinName, AssetType::CSS );
-		$scripts = $this->assetService->getAssets( $skinName, AssetType::JS );
+		$stylesheets = $allowCss ? $this->assetService->getAssets( $skinName, AssetType::CSS ) : '';
+		$scripts = $allowJs ? $this->assetService->getAssets( $skinName, AssetType::JS ) : '';
 
 		$inlineAssets = $this->config->get( 'RenderBlockingInlineAssets' );
 
@@ -67,25 +74,6 @@ class RenderBlockingHooks {
 		}
 
 		return true;
-	}
-
-	private function shouldSkipAssets( OutputPage $out ): bool {
-		$request = $out->getRequest();
-
-		$safemode = $request->getVal( 'safemode' );
-		if ( $safemode ) {
-			return true;
-		}
-
-		// Note that this is a setting in MediaWiki core and not an extension setting.
-		if ( !$this->config->get( MainConfigNames::AllowSiteCSSOnRestrictedPages ) ) {
-			// Skip for pages such as Special:Preferences and Special:Login
-			if ( $out->getAllowedModules( Module::TYPE_COMBINED ) < Module::ORIGIN_USER_SITEWIDE ) {
-				return true;
-			}
-		}
-
-		return false;
 	}
 
 	private function addInlineAssets( OutputPage $out, string $css, string $js ): void {
